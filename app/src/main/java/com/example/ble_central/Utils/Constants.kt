@@ -2,10 +2,12 @@ package com.example.ble_central.Utils
 
 import android.Manifest
 import android.os.ParcelUuid
+import java.util.concurrent.TimeUnit
 
 object Constants {
     //Stops scanning after 10 seconds
-    val SCAN_PERIOD: Long = 10000L
+    //val SCAN_PERIOD: Long = 10000L
+    val SCAN_DURATION_MILLIS = TimeUnit.SECONDS.toMillis(10)
 
     const val BT_ADVERTISING_FAILED_EXTRA_CODE = "bt_adv_failure_code"
     const val INVALID_CODE = -1

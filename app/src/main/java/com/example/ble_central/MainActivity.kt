@@ -1,161 +1,44 @@
 package com.example.ble_central
 
-import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.bluetooth.le.BluetoothLeScanner
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
+import android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.*
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.activity.viewModels
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat.requestPermissions
-import androidx.core.content.ContentProviderCompat.requireContext
-import com.example.ble_central.Components.*
-import com.example.ble_central.Utils.Constants
+import com.example.ble_central.Utils.enableBluetooth
+import com.example.ble_central.Utils.openAppDetails
+import com.example.ble_central.ui.MainScreen
+import com.example.ble_central.ui.MainViewModel
 import com.example.ble_central.ui.theme.BLE_CentralTheme
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberPermissionState
-import com.juul.kable.Advertisement
-import java.text.SimpleDateFormat
-import java.util.*
+import com.juul.tuulbox.coroutines.flow.broadcastReceiverFlow
+import kotlinx.coroutines.flow.map
 
 class MainActivity : ComponentActivity() {
-    lateinit var bluetoothManager: BluetoothManager
-    lateinit var bluetoothAdapter: BluetoothAdapter
-    lateinit var bluetoothLeScanner: BluetoothLeScanner
-    lateinit var advertisement: Advertisement
-    //lateinit var scanFilter: ScanFilter
-    var scanCallback: ScanCallback? = null
-    var handler: Handler? = null
+
+    private val isBluetoothEnabled = broadcastReceiverFlow(IntentFilter(ACTION_STATE_CHANGED))
+        .map { intent -> intent.getIsBluetoothEnabled() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = bluetoothManager.adapter
-        bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-        handler = Handler(Looper.myLooper()!!)
-/*        scanFilter =
-            ScanFilter.Builder().setServiceUuid(ParcelUuid(UUID.fromString(Constants.SERVICE_UUID)))
-                .build()*/
         setContent {
             BLE_CentralTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    MainScreen(bluetoothLeScanner, scanCallback)
-                }
+                val isBTEnabled = isBluetoothEnabled.collectAsState(initial = BluetoothAdapter.getDefaultAdapter().isEnabled)
+                    .value
+                MainScreen(isBTEnabled, { enableBluetooth() },{openAppDetails()})
             }
         }
     }
 
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-fun MainScreen(
-    bluetoothLeScanner: BluetoothLeScanner,
-    scanCallback: ScanCallback?
-) {
-    //permisions
-    val locationPermission = rememberPermissionState(permission = Constants.LOCATION_FINE_PERM)
-    val isLocationPermissionRequired by remember {
-        mutableStateOf(Build.VERSION.SDK_INT in Build.VERSION_CODES.N..Build.VERSION_CODES.R)
-    }
-
-    var mCheckedState by remember {
-        mutableStateOf(false)
-    }
-    var connectState by remember {
-        mutableStateOf(false)
-    }
-    var textLog by remember {
-        mutableStateOf("")
-    }
-    var isScanningPossible by remember {
-        mutableStateOf(false)
-    }
-    
-    if (isLocationPermissionRequired && !locationPermission.hasPermission) {
-        if (locationPermission.shouldShowRationale) {
-            val alertDialogBuilder = AlertDialog.Builder(LocalContext.current)
-            with(alertDialogBuilder) {
-                setTitle("Need location access for Bluetooth Scanning")
-                setMessage("Grant location access to discover nearby Bluetooth Scanning")
-                setPositiveButton("Okay") { _, _ ->
-                    locationPermission.launchPermissionRequest()
-                }
-            }
-            alertDialogBuilder.create().show()
-        } else {
-            LaunchedEffect(key1 = true) {
-                locationPermission.launchPermissionRequest()
-            }
-        }
-    } else {
-        isScanningPossible = true
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(10.dp),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        AutoScan(mCheckedState, isScanningPossible) { mCheckedState = it }
-        ConnectState(connectState)
-        ReadableCharacteristic()
-        WritableCharacteristic()
-        LogsComponent()
-    }
+private fun Intent.getIsBluetoothEnabled(): Boolean = when (getIntExtra(
+    BluetoothAdapter.EXTRA_STATE,
+    BluetoothAdapter.ERROR
+)) {
+    BluetoothAdapter.STATE_TURNING_ON, BluetoothAdapter.STATE_ON, BluetoothAdapter.STATE_CONNECTING, BluetoothAdapter.STATE_CONNECTED, BluetoothAdapter.STATE_DISCONNECTING, BluetoothAdapter.STATE_DISCONNECTED -> true
+    else -> false // STATE_TURNING_OFF, STATE_OFF
 }
-
-/*fun safeStartBleScan(
-    isScanning: Boolean,
-    scanFilter: ScanFilter,
-    handler: Handler,
-    scanCallback: ScanCallback?,
-    bluetoothLeScanner: BluetoothLeScanner
-) {
-    if (isScanning) {
-        appendLog("Already scanning")
-        return
-    }
-
-    val serviceFilter = scanFilter.serviceUuid?.uuid.toString()
-    appendLog("Starting BLE Scan, filter: $")
-
-}*/
-
-
-/*fun appendLog(message: String) {
-    Log.d("appendLog", message)
-    val strTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-    textLog += "\n$strTime $message"
-
-
-
-
-// scroll after delay, because textView has to be updated first
-    Handler().postDelayed({
-        scrollViewLog.fullScroll(View.FOCUS_DOWN)
-    }, 16)*//*
-
-
-}
-*/
-
