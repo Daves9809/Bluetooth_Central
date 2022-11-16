@@ -51,11 +51,14 @@ android {
 dependencies {
     def kableVersion = '0.20.1'
     def lifecycle_version = "2.5.1"
+    def nav_version = "2.5.3"
 
     //JuuL
     implementation "com.juul.tuulbox:coroutines-android-debug:6.3.0"
     implementation "com.juul.kable:core:$kableVersion"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+    implementation "com.juul.kable:core-android-debug:$kableVersion"
+    implementation "com.juul.tuulbox:logging-jvm:6.3.0"
 
     //Hilt
     implementation "com.google.dagger:hilt-android:2.44"
@@ -68,6 +71,9 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
     // Annotation processor
     kapt "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
+
+    //Navigation_compose
+    implementation "androidx.navigation:navigation-compose:$nav_version"
 
     implementation "com.google.accompanist:accompanist-permissions:0.21.1-beta"
 

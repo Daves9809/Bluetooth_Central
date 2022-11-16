@@ -1,4 +1,4 @@
-package com.example.ble_central.ui
+package com.example.ble_central.ui.Main
 
 import android.Manifest
 import android.os.Build
@@ -14,21 +14,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.ble_central.Components.Advertisement.AdvertisementsList
 import com.example.ble_central.Components.BluetoothDisabled
 import com.example.ble_central.Components.BluetoothPermissionsNotAvailable
 import com.example.ble_central.Components.BluetoothPermissionsNotGranted
 import com.example.ble_central.Utils.ScanStatus
+import com.example.ble_central.navigation.Destination
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.juul.kable.Advertisement
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MainScreen(
     isBtenabled: Boolean,
+    navController: NavController,
     enableBluetooth: () -> Unit,
     openAppDetails: () -> Unit,
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel
 ) {
     Column(
         modifier = Modifier
@@ -69,7 +73,12 @@ fun MainScreen(
                 if (permissionsState.allPermissionsGranted) {
                     if (isBtenabled) {
                         val advertisements = viewModel.advertisements.collectAsState().value
-                        AdvertisementsList(advertisements) { onAdvertisementClicked(viewModel) }
+                        AdvertisementsList(advertisements) {
+                            onAdvertisementClicked(
+                                viewModel,
+                                navController, it
+                            )
+                        }
                     } else {
                         BluetoothDisabled(enableBluetooth)
                     }
@@ -133,7 +142,8 @@ fun BoxScope.StatusSnackbar(viewModel: MainViewModel) {
 
 private fun onAdvertisementClicked(
     viewModel: MainViewModel,
-    //advertisement: Advertisement
+    navController: NavController,
+    advertisement: Advertisement
 ) {
     viewModel.stop()
     /*val intent = SensorActivityIntent(
@@ -141,5 +151,6 @@ private fun onAdvertisementClicked(
         macAddress = advertisement.address
     )*/
     Log.d("TAG", "Should new activity start")
+    navController.navigate("${Destination.DeviceScreen.name}/${advertisement.address}")
 //    startActivity(intent)
 }

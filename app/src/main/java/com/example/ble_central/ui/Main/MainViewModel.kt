@@ -1,7 +1,5 @@
-package com.example.ble_central.ui
+package com.example.ble_central.ui.Main
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ble_central.Utils.Constants
@@ -12,17 +10,18 @@ import com.juul.kable.Advertisement
 import com.juul.kable.Scanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor() : ViewModel() {
-    private val scanner = Scanner()
+    private val scanner = Scanner{
+        filters= listOf(
+
+        )
+    }
     private val scanScope = viewModelScope.childScope()
     private val found = hashMapOf<String, Advertisement>()
 
@@ -47,6 +46,10 @@ class MainViewModel @Inject constructor() : ViewModel() {
                         if (cause == null || cause is CancellationException) _status.value =
                             ScanStatus.Stopped
                     }
+                    //.filter { it.name.let { it?.startsWith("G") != null } }
+                    //.filter { it.rssi in -50..0 }
+                    //.filter { it.uuids.isNotEmpty()}
+                    //.filter { it.uuids.contains(uuid5Of())}
                     .collect{ advertisement ->
                         found[advertisement.address] = advertisement
                         _advertisements.value = found.values.toList()
@@ -64,3 +67,4 @@ class MainViewModel @Inject constructor() : ViewModel() {
         _advertisements.value = emptyList()
     }
 }
+

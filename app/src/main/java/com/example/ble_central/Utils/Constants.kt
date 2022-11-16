@@ -8,6 +8,7 @@ object Constants {
     //Stops scanning after 10 seconds
     //val SCAN_PERIOD: Long = 10000L
     val SCAN_DURATION_MILLIS = TimeUnit.SECONDS.toMillis(10)
+    val DISCONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(5)
 
     const val BT_ADVERTISING_FAILED_EXTRA_CODE = "bt_adv_failure_code"
     const val INVALID_CODE = -1
