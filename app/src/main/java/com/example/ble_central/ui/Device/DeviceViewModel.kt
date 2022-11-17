@@ -33,6 +33,12 @@ class DeviceViewModel @Inject constructor(
     private val _peripheralServices = MutableStateFlow(_peripheral.services)
     val peripheralServices = _peripheralServices.asStateFlow()
 
+    private val _indicatedData = MutableStateFlow("")
+    val indicatedData = _indicatedData.asStateFlow()
+
+    private val _readData = MutableStateFlow(Pair<String,String>("",""))
+    val readData = _readData.asStateFlow()
+
     init {
         viewModelScope.enableAutoReconnect()
         viewModelScope.connect()
@@ -70,6 +76,28 @@ class DeviceViewModel @Inject constructor(
             } catch (e: ConnectionLostException) {
                 Log.warn(e) { "Connection attempt failed" }
             }
+        }
+    }
+
+    fun writeData(characteristic: DiscoveredCharacteristic, string: String){
+        viewModelScope.launch {
+            _peripheral.write(characteristic,string.toByteArray())
+            Log.debug { "Data has been send" }
+        }
+    }
+
+    fun indicate(characteristic: DiscoveredCharacteristic){
+        viewModelScope.launch {
+            _peripheral.observe(characteristic).collect{ data ->
+                _indicatedData.value = String(data)
+            }
+        }
+    }
+
+    fun readData(characteristic: DiscoveredCharacteristic){
+        viewModelScope.launch {
+            val data = _peripheral.read(characteristic)
+            _readData.value = Pair(characteristic.characteristicUuid.toString(),String(data))
         }
     }
 

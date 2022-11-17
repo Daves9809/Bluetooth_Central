@@ -1,28 +1,22 @@
 package com.example.ble_central.ui
 
-import android.bluetooth.BluetoothGattCharacteristic
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Card
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.juul.kable.*
 
 
 @Composable
 fun DeviceScreen(
-    navController: NavController,
-    macAdress: String,
     deviceViewModel: DeviceViewModel
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -107,12 +101,12 @@ fun CharacteristicItem(characteristic: DiscoveredCharacteristic) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     characteristic.descriptors.forEach { descriptor ->
                         Text(text = "Descriptors:", fontWeight = FontWeight.Bold)
-                        Text(text = "${descriptor}")
-                        Text(text = "Properties:", fontWeight = FontWeight.Bold)
-                        PropertiesOfCharacteristic(characteristic.properties)
+                        Text(text = "$descriptor")
                     }
                 }
             }
+            Text(text = "Properties:", fontWeight = FontWeight.Bold)
+            PropertiesOfCharacteristic(characteristic = characteristic)
         }
     }
 
@@ -120,18 +114,88 @@ fun CharacteristicItem(characteristic: DiscoveredCharacteristic) {
 
 @Composable
 fun PropertiesOfCharacteristic(
-    properties: Characteristic.Properties
+    characteristic: DiscoveredCharacteristic,
+    viewModel: DeviceViewModel = hiltViewModel()
 ) {
-    val isCharacteristicRead = properties.read
-    val isCharacteristicWrite = properties.write
-    val isCharacteristicIndicate = properties.indicate
+    val indicatedData = viewModel.indicatedData.collectAsState()
+    val readData = viewModel.readData.collectAsState()
+
+    val isCharacteristicRead = characteristic.properties.read
+    val isCharacteristicWrite = characteristic.properties.write
+    val isCharacteristicIndicate = characteristic.properties.indicate
+
     Column() {
-        if (isCharacteristicRead)
-            Text(text = "Read")
-        if (isCharacteristicWrite)
-            Text(text = "Write")
-        if (isCharacteristicIndicate)
-            Text(text = "Indicate")
+        if (isCharacteristicRead) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    value = returnRead(readData.value,characteristic),
+                    enabled = false,
+                    onValueChange = {},
+                    label = {
+                        Text(text = "Read")
+                    })
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.readData(characteristic) }) {
+                    Text(text = "Read")
+                }
+            }
+        }
+        if (isCharacteristicWrite) {
+            var textWrite by remember {
+                mutableStateOf("")
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    value = textWrite,
+                    onValueChange = { textWrite = it },
+                    label = {
+                        Text(text = "Write")
+                    })
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.writeData(characteristic, textWrite) }) {
+                    Text(text = "Write")
+                }
+            }
+        }
+        if (isCharacteristicIndicate) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.weight(1f),
+                    value = indicatedData.value,
+                    onValueChange = { },
+                    enabled = false,
+                    label = {
+                        Text(text = "Indicate")
+                    })
+                Button(onClick = { viewModel.indicate(characteristic) }) {
+                    Text(text = "Indicate")
+                }
+            }
+        }
     }
 }
 
@@ -169,6 +233,10 @@ fun DeviceNameAndState(deviceName: String, stateConnection: String) {
 
 }
 
-fun isCharacteristicWritable(pChar: BluetoothGattCharacteristic): Boolean {
-    return pChar.properties and (BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
-}
+private fun returnRead(
+    readData: Pair<String, String>,
+    characteristic: DiscoveredCharacteristic
+): String = if (readData.first == characteristic.characteristicUuid.toString())
+    readData.second
+else
+    "Read"
