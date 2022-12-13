@@ -90,6 +90,7 @@ class DeviceViewModel @Inject constructor(
         viewModelScope.launch {
             _peripheral.observe(characteristic).collect{ data ->
                 _indicatedData.value = String(data)
+                android.util.Log.d("TAG","Data = ${String(data)}")
             }
         }
     }

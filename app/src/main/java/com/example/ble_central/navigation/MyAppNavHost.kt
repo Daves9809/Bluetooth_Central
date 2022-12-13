@@ -45,7 +45,7 @@ fun MyAppNavHost(
         composable("${Destination.DeviceScreen.name}/{macAdress}"){ backStackEntry ->
             backStackEntry.arguments?.getString("macAdress")?.let { macAdress ->
                 val deviceViewModel = hiltViewModel<DeviceViewModel>()
-                DeviceScreen(navController = navController, macAdress = macAdress,deviceViewModel)
+                DeviceScreen(deviceViewModel)
             }
         }
     }
